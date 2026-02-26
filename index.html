@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPC Secure Examination Pro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root { --primary:#00d2ff; --secondary:#3a7bd5; --success:#00e676; --error:#ff5252; --dark-bg:#0f2027; }
+        * { box-sizing: border-box; transition: 0.3s; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--dark-bg); color: white; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; overflow: hidden; }
+        
+        .card { width: 95%; max-width: 500px; background: rgba(255,255,255,0.08); backdrop-filter: blur(20px); border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); position: relative; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .card-header { padding: 15px; font-weight: bold; font-size: 11px; text-transform: uppercase; color: #000; text-align: center; background: var(--primary); letter-spacing: 1px; }
+        .card-body { padding: 35px; text-align: center; }
+
+        input { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid var(--primary); margin-bottom: 10px; font-size: 18px; text-align: center; background: rgba(0,0,0,0.3); color: white; outline: none; }
+        
+        #displayName { margin: 5px 0 20px 0; padding: 12px; border-radius: 8px; background: rgba(0,230,118,0.1); color: var(--success); font-weight: bold; display: none; border: 1px dashed var(--success); font-size: 14px; }
+        
+        .btn { width: 100%; padding: 16px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin-top: 10px; font-size: 14px; }
+        #verifyBtn { background: var(--primary); color: #000; }
+        #beginBtn { background: var(--success); color: #000; display: none; }
+        
+        .option { background: rgba(255,255,255,0.05); padding: 15px; margin: 12px 0; border-radius: 12px; cursor: pointer; text-align: left; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; }
+        .option:hover { background: rgba(255,255,255,0.1); }
+        .option.selected { border-color: var(--primary); background: rgba(0,210,255,0.1); }
+        .letter { width: 30px; height: 30px; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; border-radius: 6px; margin-right: 15px; color: var(--primary); font-weight: bold; }
+        
+        #timer { font-size: 22px; font-weight: bold; color: var(--primary); margin-bottom: 20px; font-family: monospace; }
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: left; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 15px; font-size: 11px; margin-top: 15px; }
+        
+        #violationAlert { display: none; color: var(--error); background: rgba(255,82,82,0.15); padding: 15px; border-radius: 12px; border: 1px solid var(--error); margin-bottom: 20px; font-size: 13px; line-height: 1.4; }
+
+        .timer-warning { color: var(--error) !important; border-color: var(--error) !important; transform: scale(1.2); animation: pulse-red 1s infinite; }
+
+        @keyframes pulse-red { 0% { opacity: 1; transform: scale(1.2); } 50% { opacity: 0.5; transform: scale(1.1); } 100% { opacity: 1; transform: scale(1.2); } }
+
+        .dev-credit { font-size: 9px; color: rgba(255, 255, 255, 0.4); letter-spacing: 2px; text-transform: uppercase; line-height: 1.6; }
+        .dev-name { color: var(--primary); font-weight: bold; font-size: 11px; }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+
+<div class="card">
+    <div id="mainHeader" class="card-header">TEST 2</div>
+    
+    <div id="loginSection" class="card-body">
+        <h2>REV 217: Anatomy and Pathology of Food Animals</h2>
+        <input type="password" id="secretInput" placeholder="Enter Your Secret Term">
+        <div id="displayName"></div>
+        <button class="btn" id="verifyBtn">Verify Secret Term</button>
+        <button class="btn" id="beginBtn">Start Examination</button>
+
+        <p style="font-size: 12px; margin-top: 20px; color: rgba(255,255,255,0.5);">
+            New Student? <span id="goToRegister" style="color: var(--primary); cursor: pointer; font-weight: bold; text-decoration: underline;">Set your Secret PIN</span>
+        </p>
+
+        <div class="dev-credit">
+            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.05); margin: 20px 0 10px 0;">
+            DESIGNED BY <br>
+            <span class="dev-name">Fransisco Mhoja-TOT</span>
+        </div>
+    </div>
+
+    <div id="registerSection" class="card-body" style="display:none;">
+        <h2 style="color: var(--primary);">Identity Setup</h2>
+        <input type="text" id="regNew" placeholder="Official Reg Number">
+        <input type="text" id="secretNew" placeholder="Create Secret Term">
+        <button class="btn" id="submitRegBtn" style="background: var(--primary); color: #000;">Lock My Identity</button>
+        <p id="backToLogin" style="font-size: 13px; margin-top: 20px; color: var(--error); cursor: pointer; font-weight: bold;">← Back to Login</p>
+    </div>
+
+    <div id="quizSection" class="card-body" style="display:none;">
+        <div id="timer">Time Remaining: <span id="timeLeft">15</span>s</div>
+        <h3 id="qContent" style="text-align:left; margin-top:0;"></h3>
+        <div id="optionsGroup"></div>
+        <button class="btn" id="nextBtn" style="display:none; background:var(--success); color:#000;">Confirm Answer</button>
+    </div>
+
+    <div id="resultSection" class="card-body" style="display:none;">
+        <h1 id="resScore" style="font-size:4rem; margin:0; color:var(--primary);">0%</h1>
+        <div id="violationAlert">⚠️ <b>SECURITY TERMINATION</b><br>Multiple window switches detected. Results submitted.</div>
+        <div class="dashboard">
+            <div><small>STUDENT NAME</small><b id="resName">---</b></div>
+            <div><small>REGISTRY NO</small><b id="resReg">---</b></div>
+            <div><small>RAW SCORE</small><b id="resRaw">---</b></div>
+            <div><small>EXAM STATUS</small><b id="resStatus">---</b></div>
+            <div><small>DEVICE USED</small><b id="resDevice">---</b></div>
+            <div><small>TOTAL DURATION</small><b id="resDuration">---</b></div>
+        </div>
+        <button class="btn" id="pdfBtn" style="background:#fff; color:#000; margin-top:20px;">Download Encrypted PDF</button>
+        <button class="btn" onclick="location.reload()" style="background:var(--secondary); color:white; margin-top:10px;">End Session</button>
+    </div>
+</div>
+
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwKQ58OaH7U_ORlsbJcKZ8TDBa5Bk3Jw13JSM_vVSi4dMJiRyu7eTDXEr2MTeRISpru/exec"; 
+
+const quiz = [
+    { q: "What is the course code?", options: ["REV 217", "REV 218", "REV 214", "REV 219"], answer: 0 },
+    { q: "Who is the facilitator of the course?", options: ["Mr Mhoja", "Madam Rahma", "Sir Mahenge", "Sir Juma"], answer: 0 },
+    { q: "Regarding Pathology, it is:", options: ["Disease control", "Disease prevention", "The study of suffering", "The study of drugs"], answer: 2 },
+   ];
+
+let i=0, score=0, timeLeft=15, strikes=0, quizActive=false;
+let cat1Mark = 0, assignmentMark = 0; // <--- ADD THIS LINE to catch marks from the sheet to the pdf
+let studentName="", regNo="", startTimeRaw, startStr;
+let userAnswers = []; 
+let deviceType = /Mobile|Android|iPhone/i.test(navigator.userAgent) ? "Mobile" : "Desktop";
+
+// --- NAVIGATION ---
+document.getElementById("goToRegister").onclick = () => {
+    document.getElementById("loginSection").style.display = "none";
+    document.getElementById("registerSection").style.display = "block";
+};
+document.getElementById("backToLogin").onclick = () => {
+    document.getElementById("registerSection").style.display = "none";
+    document.getElementById("loginSection").style.display = "block";
+};
+
+// --- REGISTRATION & RESET ---
+document.getElementById("submitRegBtn").onclick = async () => {
+    const reg = document.getElementById("regNew").value.trim().toUpperCase();
+    const secret = document.getElementById("secretNew").value.trim().toLowerCase();
+    const response = await fetch(`${SCRIPT_URL}?action=register&reg=${encodeURIComponent(reg)}&secret=${encodeURIComponent(secret)}`);
+    const data = await response.json();
+    alert(data.status === "success" ? "Registered!" : data.message);
+    if(data.status === "success") document.getElementById("backToLogin").click();
+};
+
+document.getElementById("verifyBtn").onclick = async () => {
+    const input = document.getElementById("secretInput").value.trim();
+
+    if (!input) {
+        alert("Please enter your Secret Term");
+        return;
+    }
+
+    // RESET OPTION
+    if (input.toUpperCase().startsWith("RESET:")) {
+        const res = await fetch(`${SCRIPT_URL}?action=reset&reg=${encodeURIComponent(input.split(":")[1])}`);
+        const data = await res.json();
+        alert(data.status === "reset_success" ? "Reset Successful" : "Reset Failed");
+        return;
+    }
+
+    try {
+        const response = await fetch(`${SCRIPT_URL}?action=login&secret=${encodeURIComponent(input.toLowerCase())}`);
+        const data = await response.json();
+
+        if (data.status === "success") {
+
+            studentName = data.name;
+            regNo = data.reg;
+            cat1Mark = data.cat1;
+            assignmentMark = data.assignment;
+
+            document.getElementById("displayName").innerHTML =
+                `NAME: ${studentName}<br>REG: ${regNo}`;
+
+            document.getElementById("displayName").style.display = "block";
+            document.getElementById("verifyBtn").style.display = "none";
+            document.getElementById("secretInput").style.display = "none";
+            document.getElementById("beginBtn").style.display = "block";
+
+        } else if (data.status === "already_submitted") {
+
+            alert("🚫 You have already submitted the exam.");
+
+        } else if (data.status === "invalid_secret") {
+
+            alert("❌ Secret code incorrect or not registered.");
+
+        } else {
+
+            alert("Login Failed");
+
+        }
+
+    } catch (err) {
+        console.error(err);
+        alert("Server connection failed. Check your Apps Script deployment.");
+    }
+};
+
+// --- EXAM LOGIC ---
+document.getElementById("beginBtn").onclick = () => {
+    startTimeRaw = new Date(); startStr = startTimeRaw.toLocaleTimeString();
+    quizActive = true;
+    document.getElementById("loginSection").style.display = "none";
+    document.getElementById("quizSection").style.display = "block";
+    if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+    loadQuestion();
+    setInterval(() => {
+        if(timeLeft > 0 && quizActive) {
+            timeLeft--;
+            document.getElementById("timeLeft").textContent = timeLeft;
+            if(timeLeft <= 5) document.getElementById("timer").classList.add("timer-warning");
+        } else if (quizActive) { finish("TIME EXPIRED"); }
+    }, 1000);
+};
+
+function loadQuestion() {
+    const q = quiz[i];
+    document.getElementById("qContent").textContent = (i+1) + ". " + q.q;
+    const container = document.getElementById("optionsGroup");
+    container.innerHTML = ""; document.getElementById("nextBtn").style.display = "none";
+    q.options.forEach((opt, idx) => {
+        const d = document.createElement("div"); d.className = "option";
+        d.innerHTML = `<div class="letter">${String.fromCharCode(65+idx)}</div><span>${opt}</span>`;
+        d.onclick = () => {
+            document.querySelectorAll(".option").forEach(el => el.classList.remove("selected"));
+            d.classList.add("selected"); d.dataset.idx = idx;
+            document.getElementById("nextBtn").style.display = "block";
+        };
+        container.appendChild(d);
+    });
+}
+
+document.getElementById("nextBtn").onclick = () => {
+    const selected = parseInt(document.querySelector(".option.selected").dataset.idx);
+    userAnswers.push(selected); 
+    if(selected === quiz[i].answer) score++;
+    i++; if(i < quiz.length) loadQuestion(); else finish("COMPLETED");
+};
+
+// --- SECURITY ESCAPE LOGIC ---
+window.onblur = () => {
+    if(!quizActive) return;
+    strikes++;
+    if(strikes === 0) {
+        alert("⚠️ Strike 1/2: Do not leave the exam!");
+        if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+    } else { finish("VIOLATION: ESCAPED"); }
+};
+
+// --- PDF GENERATOR & FINAL SUBMISSION ---
+async function finish(status) {
+    if(!quizActive) return;
+    quizActive = false;
+    const duration = Math.floor((new Date() - startTimeRaw)/1000) + "s";
+    const percent = Math.round((score/quiz.length)*100) + "%";
+    const raw = score + "/" + quiz.length;
+
+    document.getElementById("quizSection").style.display = "none";
+    document.getElementById("resultSection").style.display = "block";
+    if(status.includes("VIOLATION")) {
+        document.getElementById("mainHeader").style.background = "var(--error)";
+        document.getElementById("violationAlert").style.display = "block";
+    }
+
+    document.getElementById("resScore").textContent = percent;
+    document.getElementById("resName").textContent = studentName;
+    document.getElementById("resReg").textContent = regNo;
+    document.getElementById("resRaw").textContent = raw;
+    document.getElementById("resStatus").textContent = status;
+    document.getElementById("resDevice").textContent = deviceType;
+    document.getElementById("resDuration").textContent = duration;
+
+    // GENERATE THE BEAUTIFUL PDF
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    // --- 1. HEADER BAR ---
+    doc.setFillColor(0, 150, 200); 
+    doc.rect(0, 0, 210, 30, 'F'); 
+    doc.setTextColor(255, 255, 255); 
+    doc.setFontSize(18); doc.setFont("helvetica", "bold");
+    doc.text("REV 217: Anatomy and Pathology of Food Animals", 105, 15, { align: "center" });
+    doc.setFontSize(10); doc.setFont("helvetica", "normal");
+    doc.text("TEST II", 105, 22, { align: "center" });
+
+    // --- 2. WATERMARK ---
+    doc.setTextColor(245, 245, 245); 
+    doc.setFontSize(60); 
+    doc.text("OFFICIAL RESULT", 30, 180, { angle: 45 });
+
+// --- 3. STUDENT DASHBOARD (ULTRA-COMPACT) ---
+    const startY = 40;
+    const boxH = 30; // Minimized height
+    const mid = 105; 
+    
+    // Main Border
+    doc.setDrawColor(0, 150, 200); 
+    doc.setLineWidth(0.4);
+    doc.rect(15, startY, 180, boxH); 
+    doc.line(mid, startY, mid, startY + boxH); // Vertical Split
+
+    // --- LEFT COLUMN: BIO & CA ---
+    doc.setTextColor(0, 150, 200); doc.setFontSize(7);
+    doc.text("STUDENT IDENTITY", 18, startY + 4);
+    
+    doc.setTextColor(0, 0, 0); doc.setFontSize(8.5); doc.setFont("helvetica", "bold");
+    doc.text(`NAME: ${studentName}`, 18, startY + 9);
+    doc.text(`REG:  ${regNo}`, 18, startY + 14);
+    
+    doc.setDrawColor(230); doc.line(18, startY + 17, 102, startY + 17); // Thin divider
+    
+    doc.setTextColor(0, 150, 200); doc.setFontSize(7);
+    doc.text("CONTINUOUS ASSESSMENT (CA)", 18, startY + 21);
+    
+    doc.setTextColor(0, 0, 0); doc.setFontSize(8.5);
+    doc.text(`CAT I: ${cat1Mark}   |   ASSIGN: ${assignmentMark}`, 18, startY + 26);
+
+    // --- RIGHT COLUMN: EXAM SUMMARY ---
+    doc.setTextColor(0, 150, 200); doc.setFontSize(7);
+    doc.text("EXAMINATION PERFORMANCE", mid + 4, startY + 4);
+    
+    doc.setTextColor(0, 0, 0); doc.setFontSize(8.5);
+    doc.text(`RESULT : ${raw} (${percent})`, mid + 4, startY + 9);
+    doc.text(`STATUS : ${status}`, mid + 4, startY + 14);
+    doc.text(`DEVICE : ${deviceType}`, mid + 4, startY + 19);
+    doc.text(`DATE   : ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`, mid + 4, startY + 24);
+    
+    // --- 4. DETAILED EVALUATION (IMPROVED TWO-COLUMN LAYOUT) ---
+    let y = 78; // Starting position below dashboard
+    let colWidth = 82; 
+    let leftColX = 15;
+    let rightColX = 112;
+    let currentX = leftColX;
+    
+    doc.setFontSize(9);
+    doc.setTextColor(0, 150, 200);
+    doc.text("DETAILED MARK SHEET", 15, 73);
+    
+    // Draw vertical separator line for a more organized look
+    doc.setDrawColor(230);
+    doc.setLineWidth(0.2);
+    doc.line(105, 75, 105, 280); 
+    
+    quiz.forEach((q, idx) => {
+        const questionText = `${idx + 1}. ${q.q}`;
+        const splitTitle = doc.splitTextToSize(questionText, colWidth);
+        // Pre-calculate height: (lines of title * line spacing) + (options * spacing) + cushion
+        const totalQHeight = (splitTitle.length * 4) + (q.options.length * 3.8) + 5;
+
+        // Page/Column Overflow Logic
+        if (y + totalQHeight > 275) {
+            if (currentX === leftColX) {
+                currentX = rightColX; // Move to second column
+                y = 78;
+            } else {
+                doc.addPage(); // Both columns full, reset to page 2 left column
+                doc.setDrawColor(230);
+                doc.line(105, 20, 105, 280); // Redraw divider on new page
+                currentX = leftColX;
+                y = 25; 
+            }
+        }
+
+        // --- DRAW QUESTION ---
+        doc.setFont("helvetica", "bold"); 
+        doc.setFontSize(8.5);
+        doc.setTextColor(40);
+        doc.text(splitTitle, currentX, y);
+        
+        const studentAns = userAnswers[idx];
+        
+        if (studentAns === null || studentAns === undefined) {
+            doc.setFontSize(7);
+            doc.setTextColor(200, 0, 0);
+            doc.text("Not Answered", currentX + colWidth - 12, y);
+        }
+
+        y += (splitTitle.length * 4); 
+
+        // --- DRAW OPTIONS ---
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "normal");
+
+        q.options.forEach((opt, oIdx) => {
+            const isCorrect = (q.answer === oIdx);
+            const isSelected = (studentAns === oIdx);
+            
+            // Text Color Logic based on correctness
+            if (isSelected) {
+                doc.setTextColor(isCorrect ? 0 : 200, isCorrect ? 120 : 0, 0);
+            } else if (isCorrect) {
+                doc.setTextColor(0, 100, 0);
+            } else {
+                doc.setTextColor(140);
+            }
+
+            const splitOpt = doc.splitTextToSize(opt, colWidth - 8);
+            doc.text(splitOpt, currentX + 6, y);
+
+            // Redesigned precise markers
+            doc.setLineWidth(0.3);
+            if (isSelected) {
+                if (isCorrect) {
+                    doc.setDrawColor(0, 150, 0); // Precise Green Tick
+                    doc.line(currentX + 1, y - 1, currentX + 2.5, y + 0.5);
+                    doc.line(currentX + 2.5, y + 0.5, currentX + 4.5, y - 2);
+                } else {
+                    doc.setDrawColor(200, 0, 0); // Precise Red Cross
+                    doc.line(currentX + 1.5, y - 2, currentX + 3.5, y);
+                    doc.line(currentX + 3.5, y - 2, currentX + 1.5, y);
+                }
+            }
+
+            y += (splitOpt.length * 3.8); 
+        });
+
+        y += 4; // Spacing before next question
+        doc.setTextColor(0);
+    });
+
+    // --- 5. FOOTER GENERATOR ---
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let j = 1; j <= totalPages; j++) {
+        doc.setPage(j);
+        doc.setDrawColor(200);
+        doc.line(15, 282, 195, 282); // Footer line
+        
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        // Unique Verification Hash
+        const verifyID = "VERIFY-" + btoa(regNo + percent).substring(0, 10).toUpperCase();
+        
+        doc.text(`System ID: ${verifyID}`, 15, 288);
+        doc.text(`Page ${j} of ${totalPages}`, 105, 288, { align: "center" });
+        doc.text(`Continous Assessment Test II`, 195, 288, { align: "right" });
+    }
+
+    // --- FINAL SUBMISSION & UPLOAD ---
+    console.log("Uploading to Drive...");
+    const pdfBase64 = doc.output('datauristring').split(',')[1];
+
+    fetch(SCRIPT_URL, { 
+        method: "POST", 
+        mode: "no-cors", 
+        body: new URLSearchParams({ 
+            reg: regNo, 
+            scorePercent: percent, 
+            rawScore: raw, 
+            startTime: startStr, 
+            endTime: new Date().toLocaleTimeString(), 
+            duration: duration, 
+            status: status, 
+            device: deviceType, 
+            pdfBase64: pdfBase64 
+        })
+    }).then(() => {
+        alert("Success! Your results and PDF have been secured on the server.");
+    }).catch(err => {
+        alert("Upload failed. Please check your internet connection.");
+        console.error("Error:", err);
+    });
+
+    // This line handles the button for the student to save their own copy locally
+    document.getElementById("pdfBtn").onclick = () => doc.save(`Result_${regNo}.pdf`);
+} // This is the closing bracket for the finish function
+    ;
+
+</script>
+</body>
+</html>
